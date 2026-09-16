@@ -1,0 +1,34 @@
+# ---- Dependencias y builds ----
+node_modules/
+.next/
+out/
+dist/
+build/
+target/
+*.class
+*.tsbuildinfo
+
+# ---- Variables de entorno / secretos ----
+.env
+.env.local
+.env.*.local
+!.env.example
+backend/.env
+frontend/.env.local
+*.pem
+*.key
+
+# ---- Herramientas locales (JDK, Maven, etc.) ----
+.tools/
+
+# ---- IDE / SO ----
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Logs ----
+*.log
+hs_err_pid*
