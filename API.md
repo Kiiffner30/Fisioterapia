@@ -25,8 +25,9 @@ Fluxo implementado (`AuthController` + `AuthenticationService` + `JwtTokenProvid
    `email` e `role`. Não existe *blacklist*: ao fazer logout o access token continua válido até expirar.
 5. **Refresh token** é **opaco** (não é JWT): 32 bytes aleatórios em Base64URL; no banco (`refresh_tokens`)
    só é persistido o **SHA-256**. A cada refresh o token anterior é **revogado** (rotação).
-6. Esteja atento à *cookie*: como ela vive no path `/api`, as requisições do frontend passam por isso.
-   Em desenvolvimento o `WebConfig` habilita CORS com `allowCredentials: true`.
+6. Esteja atento à *cookie*: como ela vive no path `/api`, as chamadas que enviam credenciais (cookies)
+   precisam respeitar esse path. O `WebConfig` habilita CORS com `allowCredentials: true` para as origens de
+   `CORS_ALLOWED_ORIGINS`.
 
 ## Roles e permissões
 
@@ -177,8 +178,8 @@ comparação **case-insensitive**, com `trim`). O usuário é criado com `active
 
 ## Códigos de erro padronizados
 
-Existem **dois formatos** de erro — a diferença é uma inconsistência do código atual, registrada aqui como
-`A VALIDAR` (não corrigir sem aprovação do time):
+Existem **dois formatos** de erro — inconsistência conhecida do código atual, registrada aqui como
+**débito técnico** (correção prevista para a Parte 5):
 
 **1) Erros de negócio/validação (Spring MVC) — `ApiError` via `GlobalExceptionHandler`:**
 
@@ -212,14 +213,13 @@ Existem **dois formatos** de erro — a diferença é uma inconsistência do có
 
 ## Observações
 
-- ⚠️ **A VALIDAR:** o escopo original da documentação citava `GET /api/me`, mas o controller expõe
-  **`GET /api/auth/me`** (e o `AuthController` está mapeado em `/api/auth`). Alinhar com o time do frontend —
-  o código **não** foi alterado.
+- **Nota:** o endpoint canônico é `/api/auth/me`. O frontend deve consumir este caminho.
+- **Nota:** este documento cobre **apenas o backend**; o frontend está em repositório separado.
 - **CORS:** `WebConfig` libera `/api/**` para as origens de `CORS_ALLOWED_ORIGINS`, com
   `allowCredentials: true`, métodos `GET, POST, PUT, PATCH, DELETE, OPTIONS` e qualquer header
   (`allowedHeaders("*")`). Como o cookie é `SameSite=Lax`, chamadas cross-origin diretas (ex.: `localhost:3000`
-  → `localhost:8080`) exigem atenção; o próprio `WebConfig` documenta que o frontend usa **proxy** de `/api`
-  em desenvolvimento.
+  → `localhost:8080`) exigem atenção; o próprio `WebConfig` documenta que, em desenvolvimento, o frontend
+  (repositório separado) usa **proxy** de `/api`.
 - **Datas:** `createdAt` é um `Instant` serializado em ISO-8601 UTC (`2026-01-01T12:00:00Z`). O Jackson está
   configurado com `time-zone: America/Sao_Paulo` e `locale: pt-BR`.
 - **Mensagens:** todas as mensagens de erro/sucesso de validação estão em **espanhol** (idioma do código).

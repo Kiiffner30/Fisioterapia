@@ -1,5 +1,10 @@
 # FisioVida — Backend
 
+## Escopo deste repositório
+
+Este repositório contém **apenas o backend** do FisioVida.
+O frontend está em um repositório separado.
+
 ## Objetivo
 
 API REST do sistema de gestão interna da clínica de fisioterapia **FisioVida**. Nesta etapa o backend cobre
@@ -146,6 +151,9 @@ O `spring.datasource.url` é montado como `jdbc:postgresql://${DATABASE_HOST}:${
 | `JWT_ACCESS_EXPIRATION` | Validade do access token em **ISO-8601 Duration** (não é segundos!) | `PT15M` |
 | `JWT_REFRESH_EXPIRATION` | Validade do refresh token em ISO-8601 Duration | `P30D` |
 
+> **Importante:** as durações JWT usam o formato **ISO-8601** (ex.: `PT15M` = 15 minutos, `P30D` = 30 dias).
+> **Não** são segundos.
+
 ### CORS / cookie de refresh
 
 | Variável | Descrição | Exemplo |
@@ -238,18 +246,37 @@ Ainda **não implementado** (não há código, endpoints nem tabelas para isso):
 - Listagem/consulta de usuários (`GET /api/users`) e edição/troca de senha.
 - Recuperação de senha e exposição da trilha de **auditoria** via API (hoje os registros só são gravados).
 
-## Notas e pontos A VALIDAR
+## Notas, débitos técnicos e pontos A VALIDAR
 
-- ⚠️ **A VALIDAR:** o escopo original da documentação pressupunha o frontend em **outro repositório**, mas o
-  frontend (`frontend/`, app `create-next-app` ainda sem telas) está **neste mesmo repositório**. Decidir se
-  o repositório permanece monolítico e, em caso afirmativo, se este README deve incluir também o frontend.
-- ⚠️ **A VALIDAR:** o `.env.example` da raiz mistura variáveis de backend e de frontend
-  (`NEXT_PUBLIC_API_URL`). Foi mantido assim para não quebrar o frontend atual; definir se será dividido em
-  `backend/.env.example` e `frontend/.env.example`.
+**Resolvido nesta fase de documentação:**
+
+- **Escopo:** este repositório contém **apenas o backend**; o frontend está em repositório separado e não é
+  documentado aqui.
+- **Endpoint de sessão:** o caminho canônico é **`GET /api/auth/me`** (ver [`API.md`](API.md)).
+- **Variáveis de ambiente:** os nomes são os **reais do código** (`DATABASE_*`, `SERVER_PORT`, `JWT_*`,
+  `CORS_ALLOWED_ORIGINS`, `COOKIE_SECURE`, `BOOTSTRAP_ADMIN_*`, `POSTGRES_*`) e o `.env.example` contém
+  **apenas** variáveis do backend.
+
+**Idioma:** a documentação está em **pt-BR**. O código-fonte pode conter termos em espanhol em algumas
+classes (javadocs e mensagens de validação) — padronização futura; **nenhum código foi alterado** nesta etapa.
+
+**Débitos técnicos conhecidos** (correção prevista para a Parte 5 — detalhados em
+[`ARCHITECTURE.md`](ARCHITECTURE.md) e [`API.md`](API.md)):
+
+- `AuditAction.LOGOUT` existe mas **não** é gravado por `AuthenticationService.logout`.
+- `FindUserByIdUseCase` tem javadoc citando "`/api/me`" em vez de `GET /api/auth/me`.
+- **Dois formatos de erro** (`ApiError` × `HttpErrorWriter`) e duplicidade no tratamento de 403.
+- Domínio de negócio da clínica (pacientes, agenda, consultas, tipos, horários, clínica, configurações) ainda
+  **não existe**.
+
+**Pontos A VALIDAR (decisões pendentes):**
+
 - ⚠️ **A VALIDAR:** os defaults de desenvolvimento de `application.yml` (usuário/senha do banco e senha do
   admin) estão versionados no repositório. Nenhum valor real foi copiado para esta documentação; o
-  `.env.example` usa apenas placeholders.
-- ⚠️ **A VALIDAR:** comentários e mensagens do código estão em **espanhol**, enquanto esta documentação está
-  em **português**. Confirmar o idioma padrão adotado pelo time.
-- ⚠️ **A VALIDAR:** `GET /api/auth/me` — o nome do endpoint deve ser alinhado com o time do frontend (ver
-  [`API.md`](API.md)).
+  `.env.example` usa apenas placeholders. Decidir se esses defaults serão removidos ou parametrizados.
+- ⚠️ **A VALIDAR (estrutural):** o código do backend vive no subdiretório `backend/`. Se este repositório é
+  exclusivamente do backend, avaliar mover o conteúdo para a raiz (ajustando `docker-compose.yml`, docs e os
+  caminhos dos comandos) — sugestão para a Parte 1.
+- ⚠️ **A VALIDAR:** a pasta `frontend/` continua **rastreada pelo Git** neste repositório e agora está listada
+  no `.gitignore`. O `.gitignore` **não** remove arquivos já rastreados: retirá-la do índice exigiria
+  `git rm -r --cached frontend`, o que **não** foi executado por estar fora do escopo de documentação.

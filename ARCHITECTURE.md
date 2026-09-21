@@ -118,14 +118,26 @@ filtro) usam o `HttpErrorWriter`.
 - Testes de unidade: `EmailTest`, `UserTest`, `JwtTokenProviderTest`, `BcryptPasswordEncoderTest`.
 - O `maven-surefire-plugin` inclui `*Test.java`, `*Tests.java` e `*IT.java`.
 
-## Pontos A VALIDAR (arquitetura)
+## Débitos técnicos conhecidos (correção prevista para a Parte 5)
 
-- ⚠️ **A VALIDAR:** `LOGOUT` existe em `AuditAction` mas **nunca é gravado** (`AuthenticationService.logout`
-  não chama `audit.record`). Decidir se deve ser auditado.
-- ⚠️ **A VALIDAR:** `FindUserByIdUseCase` tem o javadoc referindo-se a "`/api/me`", porém o endpoint real é
+Itens identificados na leitura do código. **Nenhum** deles foi alterado nesta fase de documentação.
+
+- **`AuditAction.LOGOUT` não é gravado:** o enum possui o valor, mas `AuthenticationService.logout` não chama
+  `audit.record`. Decidir se o logout deve gerar registro de auditoria.
+- **Javadoc desatualizado:** `FindUserByIdUseCase` refere-se a "`/api/me`", porém o endpoint real é
   `GET /api/auth/me`.
-- ⚠️ **A VALIDAR:** `GlobalExceptionHandler` trata `AccessDeniedException` (403 no formato `ApiError`), mas o
-  `accessDeniedHandler` do `SecurityConfig` também responde 403 (formato do `HttpErrorWriter`). Existem,
-  portanto, **dois formatos de erro** — alinhar antes de o frontend tratar erros.
-- ⚠️ **A VALIDAR:** o domínio ainda não modela o negócio da clínica (pacientes, agenda, consultas, tipos,
-  horários, clínica, configurações) — não há camadas nem endpoints para isso.
+- **Dois formatos de erro e duplicidade no 403:** `GlobalExceptionHandler` trata `AccessDeniedException`
+  (formato `ApiError`) e o `accessDeniedHandler` do `SecurityConfig` também responde 403 (formato curto do
+  `HttpErrorWriter`). Unificar antes de o frontend (repositório separado) implementar o tratamento de erros.
+- **Domínio de negócio inexistente:** pacientes, agenda, consultas, tipos de consulta, horários, clínica e
+  configurações ainda não estão modelados — sem camadas, tabelas ou endpoints.
+
+## Nota de idioma
+
+A documentação deste repositório está em **pt-BR**. O código-fonte mantém termos, javadocs e mensagens de
+validação em **espanhol** — padronização prevista para uma fase futura. O código **não** foi alterado nesta
+etapa.
+
+## Escopo
+
+Este documento descreve **apenas o backend**; o frontend está em repositório separado.

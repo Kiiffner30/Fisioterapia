@@ -32,3 +32,9 @@ desktop.ini
 # ---- Logs ----
 *.log
 hs_err_pid*
+
+# ---- Resquício antigo — frontend agora está em repo separado ----
+# Obs.: os arquivos de `frontend/` que já estavam versionados continuam RASTREADOS pelo Git
+# (o .gitignore não se aplica a arquivos já rastreados). Remover do índice exigiria
+# `git rm -r --cached frontend` — decisão pendente (A VALIDAR).
+frontend/
