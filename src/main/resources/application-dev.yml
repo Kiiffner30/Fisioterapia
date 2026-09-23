@@ -1,0 +1,24 @@
+# ==========================================================================
+#  Perfil: dev (desenvolvimento local)
+#  Contem DEFAULTS convenientes para rodar o backend na maquina do dev,
+#  inclusive credenciais ficticias. Cada valor pode ser sobrescrito por
+#  variavel de ambiente.
+#
+#  ATENCAO: estes valores NAO devem ser usados em nenhum outro ambiente.
+# ==========================================================================
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DATABASE_HOST:localhost}:${DATABASE_PORT:5432}/${DATABASE_NAME:fisioterapia}
+    username: ${DATABASE_USERNAME:fisioterapia}
+    password: ${DATABASE_PASSWORD:fisioterapia_dev}
+
+jwt:
+  secret: ${JWT_SECRET:solo-desarrollo-local-cambiar-en-produccion-0123456789abcdef}
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+  bootstrap:
+    admin-email: ${BOOTSTRAP_ADMIN_EMAIL:admin@clinica.local}
+    admin-password: ${BOOTSTRAP_ADMIN_PASSWORD:Admin123!}

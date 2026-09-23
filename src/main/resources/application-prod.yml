@@ -1,0 +1,26 @@
+# ==========================================================================
+#  Perfil: prod (producao)
+#  SEM defaults: todas as variaveis abaixo sao OBRIGATORIAS.
+#  Placeholders sem valor nao sao resolvidos -> se alguma variavel faltar,
+#  a aplicacao NAO sobe (falha no start, por design).
+#
+#  Antes de subir em producao, configure tambem (ver README.md):
+#    SERVER_PORT, JWT_ACCESS_EXPIRATION, JWT_REFRESH_EXPIRATION, COOKIE_SECURE
+#    (COOKIE_SECURE=true e obrigatorio quando a API for servida por HTTPS)
+# ==========================================================================
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+
+jwt:
+  secret: ${JWT_SECRET}
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
+  bootstrap:
+    admin-email: ${BOOTSTRAP_ADMIN_EMAIL}
+    admin-password: ${BOOTSTRAP_ADMIN_PASSWORD}

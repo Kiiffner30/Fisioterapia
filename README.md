@@ -14,7 +14,7 @@ consultas, horários) **ainda não existem no código**.
 
 ## Stack
 
-Extraída de `backend/pom.xml` e de `backend/src/main/resources/application.yml`:
+Extraída de `pom.xml` e de `src/main/resources/application.yml`:
 
 | Item | Versão / Configuração |
 |------|----------------------|
@@ -56,9 +56,12 @@ Documentação detalhada em [`ARCHITECTURE.md`](ARCHITECTURE.md) e contrato HTTP
 ## Estrutura de pastas
 
 ```
-backend/
+FisioVida/                        (raiz do repositorio)
 ├── mvnw, mvnw.cmd, pom.xml
 ├── .mvn/wrapper/maven-wrapper.properties
+├── docker-compose.yml            (PostgreSQL 16)
+├── .env.example
+├── README.md, API.md, ARCHITECTURE.md
 └── src
     ├── main
     │   ├── java/com/clinica/fisioterapia
@@ -68,7 +71,9 @@ backend/
     │   │   ├── infrastructure/     (config, persistence, security)
     │   │   └── presentation/rest/  (controllers, dto, error)
     │   └── resources
-    │       ├── application.yml
+    │       ├── application.yml     (comum, sem credenciais)
+    │       ├── application-dev.yml (defaults ficticios de desenvolvimento)
+    │       ├── application-prod.yml(sem defaults: exige variaveis de ambiente)
     │       └── db/migration/       (V1 … V5)
     └── test/java/com/clinica/fisioterapia
         ├── domain/                 (EmailTest, UserTest)
@@ -95,8 +100,9 @@ Para derrubar: `docker compose down` (mantém os dados) ou `docker compose down 
 
 ## Como rodar o backend
 
+> Todos os comandos `./mvnw …` são executados na **raiz do repositório**.
+
 ```bash
-cd backend
 ./mvnw spring-boot:run
 ```
 
@@ -105,7 +111,6 @@ No Windows (PowerShell/CMD): `.\mvnw.cmd spring-boot:run`. A API sobe em `http:/
 ## Como rodar os testes
 
 ```bash
-cd backend
 ./mvnw test
 ```
 
@@ -116,7 +121,6 @@ rodando**. Alternativa sem Testcontainers: exportar `TEST_DATABASE_URL`, `TEST_D
 ## Como buildar
 
 ```bash
-cd backend
 ./mvnw clean package
 ```
 
@@ -124,6 +128,23 @@ cd backend
 
 Nomes **exatamente** como lidos em `application.yml` / `docker-compose.yml`. Os valores da coluna "Exemplo"
 são placeholders de desenvolvimento — **nunca versione credenciais reais**. Ver também `.env.example`.
+
+### Perfis de configuração
+
+A configuração está separada por profile (arquivos em `src/main/resources`):
+
+| Arquivo | Conteúdo | Quando é carregado |
+|---------|----------|--------------------|
+| `application.yml` | Configuração comum: aplicação, JPA, Flyway, Jackson, porta, cookie e expirações JWT — **sem credenciais** | sempre |
+| `application-dev.yml` | Defaults **fictícios** de desenvolvimento: datasource, `JWT_SECRET`, CORS e bootstrap do ADMIN | profile `dev` (**padrão**) |
+| `application-prod.yml` | **Sem defaults**: apenas `${VARIAVEL}` | profile `prod` |
+
+O profile ativo é definido por `SPRING_PROFILES_ACTIVE` (padrão: `dev`).
+
+> ⚠️ **Importante:** no profile `prod`, as variáveis `DATABASE_*`, `JWT_SECRET`, `CORS_ALLOWED_ORIGINS` e
+> `BOOTSTRAP_ADMIN_*` são **obrigatórias** — sem elas a aplicação **não sobe** (placeholder não resolvido).
+> `SERVER_PORT`, `JWT_ACCESS_EXPIRATION`, `JWT_REFRESH_EXPIRATION` e `COOKIE_SECURE` permanecem com default e
+> podem ser sobrescritas por variável de ambiente.
 
 ### Banco de dados
 
@@ -212,7 +233,7 @@ Fora de ambiente local, defina `BOOTSTRAP_ADMIN_EMAIL` e `BOOTSTRAP_ADMIN_PASSWO
 
 ## Migrations Flyway
 
-Localizadas em `backend/src/main/resources/db/migration` (Flyway com `baseline-on-migrate: true`):
+Localizadas em `src/main/resources/db/migration` (Flyway com `baseline-on-migrate: true`):
 
 | Arquivo | O que faz |
 |---------|-----------|
@@ -256,6 +277,12 @@ Ainda **não implementado** (não há código, endpoints nem tabelas para isso):
 - **Variáveis de ambiente:** os nomes são os **reais do código** (`DATABASE_*`, `SERVER_PORT`, `JWT_*`,
   `CORS_ALLOWED_ORIGINS`, `COOKIE_SECURE`, `BOOTSTRAP_ADMIN_*`, `POSTGRES_*`) e o `.env.example` contém
   **apenas** variáveis do backend.
+- ✅ **Resolvido:** configuração separada por profile (`application-dev.yml` / `application-prod.yml`), sem
+  credenciais no `application.yml` principal.
+- ✅ **Resolvido:** o código do backend agora vive na **raiz do repositório** (movido com `git mv`, histórico
+  preservado).
+- ✅ **Resolvido:** a pasta `frontend/` foi **removida do tracking** do Git (continua no disco, ignorada pelo
+  `.gitignore`).
 
 **Idioma:** a documentação está em **pt-BR**. O código-fonte pode conter termos em espanhol em algumas
 classes (javadocs e mensagens de validação) — padronização futura; **nenhum código foi alterado** nesta etapa.
@@ -271,12 +298,7 @@ classes (javadocs e mensagens de validação) — padronização futura; **nenhu
 
 **Pontos A VALIDAR (decisões pendentes):**
 
-- ⚠️ **A VALIDAR:** os defaults de desenvolvimento de `application.yml` (usuário/senha do banco e senha do
-  admin) estão versionados no repositório. Nenhum valor real foi copiado para esta documentação; o
-  `.env.example` usa apenas placeholders. Decidir se esses defaults serão removidos ou parametrizados.
-- ⚠️ **A VALIDAR (estrutural):** o código do backend vive no subdiretório `backend/`. Se este repositório é
-  exclusivamente do backend, avaliar mover o conteúdo para a raiz (ajustando `docker-compose.yml`, docs e os
-  caminhos dos comandos) — sugestão para a Parte 1.
-- ⚠️ **A VALIDAR:** a pasta `frontend/` continua **rastreada pelo Git** neste repositório e agora está listada
-  no `.gitignore`. O `.gitignore` **não** remove arquivos já rastreados: retirá-la do índice exigiria
-  `git rm -r --cached frontend`, o que **não** foi executado por estar fora do escopo de documentação.
+- ⚠️ **A VALIDAR:** a pasta `backend/target/` (artefato de build **não rastreado**, anterior à reorganização)
+  permanece no disco. Decidir se deve ser removida — na nova estrutura o build gera `target/` na raiz.
+- ⚠️ **A VALIDAR:** existe um `package-lock.json` **órfão** na raiz (sem `package.json` correspondente,
+  resquício do scaffold do frontend). Decidir se deve ser removido deste repositório backend-only.
