@@ -7,7 +7,7 @@ import com.clinica.fisioterapia.domain.user.UserRepository;
 import java.util.UUID;
 
 /**
- * Caso de uso: consultar un usuario por id (para /api/me).
+ * Caso de uso: consultar un usuario por id (para GET /api/auth/me).
  */
 public class FindUserByIdUseCase {
 

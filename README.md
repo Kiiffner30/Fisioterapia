@@ -321,14 +321,16 @@ Ainda **não implementado** (não há código, endpoints nem tabelas para isso):
 **Idioma:** a documentação está em **pt-BR**. O código-fonte pode conter termos em espanhol em algumas
 classes (javadocs e mensagens de validação) — padronização futura; **nenhum código foi alterado** nesta etapa.
 
-**Débitos técnicos conhecidos** (correção prevista para a Parte 5 — detalhados em
-[`ARCHITECTURE.md`](ARCHITECTURE.md) e [`API.md`](API.md)):
+**Débitos técnicos — 4 resolvidos na Parte 5 (parcial)** (detalhes em
+[`ARCHITECTURE.md`](ARCHITECTURE.md) → "Débitos técnicos resolvidos"):
 
-- `AuditAction.LOGOUT` existe mas **não** é gravado por `AuthenticationService.logout`.
-- `FindUserByIdUseCase` tem javadoc citando "`/api/me`" em vez de `GET /api/auth/me`.
-- **Dois formatos de erro** (`ApiError` × `HttpErrorWriter`) e duplicidade no tratamento de 403.
-- Domínio de negócio da clínica (pacientes, agenda, consultas, tipos, horários, clínica, configurações) ainda
-  **não existe**.
+- ✅ Javadoc do `FindUserByIdUseCase` agora cita `GET /api/auth/me`.
+- ✅ `AuditAction.LOGOUT` passou a ser gravado no logout (payload apenas com `userId` — sem senha, sem tokens).
+- ✅ **Formato de erro unificado** entre `ApiError` e `HttpErrorWriter` (ver [`API.md`](API.md)).
+- ✅ **Duplicidade no tratamento de 403** removida (só o `accessDeniedHandler` responde).
+
+**Pendência de roadmap:** o domínio de negócio da clínica (pacientes, agenda, consultas, tipos, horários,
+clínica, configurações) ainda **não existe** no código.
 
 **Pontos A VALIDAR (decisões pendentes):**
 

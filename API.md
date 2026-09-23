@@ -152,7 +152,8 @@ novo access token + nova cookie.
 **Request:** sem body.
 **Response 204:** sem corpo. Header `Set-Cookie: refresh_token=; Path=/api; HttpOnly; Max-Age=0`.
 **Erros:** nenhum previsto — sem cookie (ou cookie desconhecida) ainda responde **204** (idempotente).
-**Auditoria:** **não** registra ação de logout (o `AuditAction.LOGOUT` existe no enum, mas não é usado).
+**Auditoria:** grava `LOGOUT` com o `userId` do token revogado (**sem** senha e **sem** tokens no payload). Sem
+cookie válido não há usuário identificável, então não há registro — a resposta continua **204**.
 
 ### GET /api/auth/me
 
@@ -202,7 +203,7 @@ comparação **case-insensitive**, com `trim`). O usuário é criado com `active
 - `400` — falha de validação (`campo: mensagem`), body ausente/ilegível ou `role` inexistente
   (`Perfil inválido: X`).
 - `401` — sem token válido.
-- `403` — `No tiene permisos para esta acción` (role diferente de ADMIN).
+- `403` — `Acceso denegado` (role diferente de ADMIN; resposta do `accessDeniedHandler`).
 - `409` — `Ya existe un usuario con ese email`.
 
 **Auditoria:** grava `USER_CREATED` (payload com e-mail, role e `active`; **sem senha**).
@@ -233,10 +234,20 @@ comparação **case-insensitive**, com `trim`). O usuário é criado com `active
 
 ## Códigos de erro padronizados
 
-Existem **dois formatos** de erro — inconsistência conhecida do código atual, registrada aqui como
-**débito técnico** (correção prevista para a Parte 5):
+**Formato único** (`ApiError`), emitido tanto pelo `GlobalExceptionHandler` (erros de negócio/validação)
+quanto pelo `HttpErrorWriter` (erros dos filtros/handlers de segurança):
 
-**1) Erros de negócio/validação (Spring MVC) — `ApiError` via `GlobalExceptionHandler`:**
+```json
+{
+  "timestamp": "2026-01-01T12:00:00Z",
+  "status": 401,
+  "error": "No autenticado",
+  "message": "No autenticado",
+  "path": "/api/auth/me"
+}
+```
+
+Exemplo com detalhe de validação (o `message` traz campo e motivo):
 
 ```json
 {
@@ -248,23 +259,20 @@ Existem **dois formatos** de erro — inconsistência conhecida do código atual
 }
 ```
 
-**2) Erros emitidos pelos filtros/handlers de segurança — `HttpErrorWriter` (sem `timestamp`/`message`):**
+| Status | `error` | `message` | Quando acontece |
+|--------|---------|-----------|-----------------|
+| `400` | `Solicitud inválida` | detalhe (`campo: mensagem`) ou o próprio `error` | Validação de campos, body ilegível, `role` inválido, `active` ausente, `id` não-UUID |
+| `401` | `No autenticado` | igual ao `error` | `Authorization` ausente/inválido/expirado (emitido pelo `JwtAuthenticationFilter`) |
+| `401` | `Autenticación fallida` | `Credenciales inválidas` | Credenciais inválidas no login |
+| `401` | `Sesión expirada` | `Sesión inválida o expirada` | Refresh token ausente, desconhecido, revogado ou expirado |
+| `401` | `Usuario inactivo` | `El usuario está inactivo` | Usuário desativado |
+| `403` | `Acceso denegado` | igual ao `error` | Role sem permissão (`@PreAuthorize`) — resposta do `accessDeniedHandler` |
+| `404` | `Recurso no encontrado` | `Usuario no encontrado` ou `La ruta no existe` | Usuário inexistente ou rota desconhecida |
+| `409` | `Conflicto` | `Ya existe un usuario con ese email` | E-mail já cadastrado |
+| `500` | `Error interno` | `Ocurrió un error inesperado` | Exceção não tratada (stack trace **não** é exposto; é logado no servidor) |
 
-```json
-{ "status": 401, "error": "No autenticado", "path": "/api/auth/me" }
-```
-
-| Status | `error` | Quando acontece |
-|--------|---------|-----------------|
-| `400` | `Solicitud inválida` | Validação de campos (`campo: mensagem`), body ilegível, `role` inválido, `active` ausente, `id` não-UUID |
-| `401` | `No autenticado` | `Authorization` ausente/inválido/expirado (formato do `HttpErrorWriter`) |
-| `401` | `Autenticación fallida` | Credenciais inválidas no login |
-| `401` | `Sesión expirada` | Refresh token ausente, desconhecido, revogado ou expirado |
-| `401` | `Usuario inactivo` | Usuário desativado |
-| `403` | `Acceso denegado` / `No tiene permisos para esta acción` | Role sem permissão (`@PreAuthorize`) |
-| `404` | `Recurso no encontrado` | Usuário inexistente (`Usuario no encontrado`) ou rota desconhecida (`La ruta no existe`) |
-| `409` | `Conflicto` | `Ya existe un usuario con ese email` |
-| `500` | `Error interno` | Exceção não tratada (stack trace **não** é exposto; é logado no servidor) |
+> ✅ **Parte 5:** antes existiam **dois** formatos de erro (o JSON do `HttpErrorWriter` não tinha `timestamp`
+> nem `message`). Agora os dois caminhos produzem **este mesmo corpo**.
 
 ## Observações
 

@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -77,10 +76,9 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, "Solicitud inválida", ex.getMessage(), request);
     }
 
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
-        return error(HttpStatus.FORBIDDEN, "Acceso denegado", "No tiene permisos para esta acción", request);
-    }
+    // 403 (acceso denegado por @PreAuthorize): lo resuelve UNICAMENTE el accessDeniedHandler de
+    // SecurityConfig, que responde con el mismo formato ApiError (via HttpErrorWriter).
+    // No se registra aqui un @ExceptionHandler para AccessDeniedException para evitar doble tratamiento.
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiError> handleNoResource(NoResourceFoundException ex, HttpServletRequest request) {

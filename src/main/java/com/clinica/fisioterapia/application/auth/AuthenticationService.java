@@ -109,6 +109,9 @@ public class AuthenticationService {
             return;
         }
         refreshTokens.findByTokenHash(tokenProvider.sha256(rawRefreshToken)).ifPresent(stored -> {
+            UUID userId = stored.getUserId();
+            // Auditoria del logout: solo el id del usuario (nunca contrasena ni tokens).
+            audit.record(userId, AuditAction.LOGOUT, "USER", userId.toString(), null, Map.of());
             stored.revoke(clock.now());
             refreshTokens.save(stored);
         });

@@ -118,17 +118,30 @@ filtro) usam o `HttpErrorWriter`.
 - Testes de unidade: `EmailTest`, `UserTest`, `JwtTokenProviderTest`, `BcryptPasswordEncoderTest`.
 - O `maven-surefire-plugin` inclui `*Test.java`, `*Tests.java` e `*IT.java`.
 
-## Débitos técnicos conhecidos (correção prevista para a Parte 5)
+## Débitos técnicos resolvidos (Parte 5 — parcial)
 
-Itens identificados na leitura do código. **Nenhum** deles foi alterado nesta fase de documentação.
+- ✅ **Javadoc do `FindUserByIdUseCase`** corrigido: agora cita `GET /api/auth/me`.
+- ✅ **`AuditAction.LOGOUT` passou a ser gravado** por `AuthenticationService.logout`, **antes** de revogar o
+  refresh token. O payload de auditoria contém apenas o `userId` — **sem** senha e **sem** tokens.
+- ✅ **Formato de erro unificado:** o `HttpErrorWriter` passou a serializar o mesmo `ApiError`
+  (`timestamp, status, error, message, path`), eliminando o segundo formato de erro.
+- ✅ **Duplicidade no tratamento de 403 removida:** o `@ExceptionHandler(AccessDeniedException)` saiu do
+  `GlobalExceptionHandler`; o 403 é respondido apenas pelo `accessDeniedHandler` do `SecurityConfig`.
 
-- **`AuditAction.LOGOUT` não é gravado:** o enum possui o valor, mas `AuthenticationService.logout` não chama
-  `audit.record`. Decidir se o logout deve gerar registro de auditoria.
-- **Javadoc desatualizado:** `FindUserByIdUseCase` refere-se a "`/api/me`", porém o endpoint real é
-  `GET /api/auth/me`.
-- **Dois formatos de erro e duplicidade no 403:** `GlobalExceptionHandler` trata `AccessDeniedException`
-  (formato `ApiError`) e o `accessDeniedHandler` do `SecurityConfig` também responde 403 (formato curto do
-  `HttpErrorWriter`). Unificar antes de o frontend (repositório separado) implementar o tratamento de erros.
+### Observações dessas correções
+
+- **Trade-off de camadas:** `HttpErrorWriter` (infrastructure) agora importa `ApiError` (presentation) para
+  garantir **uma única** definição do contrato de erro. Se o time preferir camadas estritamente independentes,
+  a alternativa é mover `ApiError` para um pacote compartilhado — **não** feito nesta parte.
+- **Corpo do 403:** como só o `accessDeniedHandler` responde, o JSON passou a ser
+  `error = message = "Acceso denegado"` (antes: `message = "No tiene permisos para esta acción"`). O
+  comportamento HTTP (**403**) não mudou.
+- **Logout sem cookie válido:** continua **204** e **não** gera auditoria (não há usuário identificável).
+- **Verificação:** `./mvnw clean package -DskipTests` → **BUILD SUCCESS**. Os testes de integração
+  (`AuthenticationFlowIT`) **não** foram executados (exigem PostgreSQL/Docker).
+
+## Pendências de roadmap (não são débitos)
+
 - **Domínio de negócio inexistente:** pacientes, agenda, consultas, tipos de consulta, horários, clínica e
   configurações ainda não estão modelados — sem camadas, tabelas ou endpoints.
 
