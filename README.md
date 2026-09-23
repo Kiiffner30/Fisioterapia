@@ -205,6 +205,20 @@ O `spring.datasource.url` é montado como `jdbc:postgresql://${DATABASE_HOST}:${
 > O nome (`refresh_token`), o `path` (`/api`) e o `sameSite` (`lax`) da cookie estão **fixos em
 > `application.yml`** (`app.cookie.*`) e não possuem variável de ambiente.
 
+#### Integração com o frontend (CORS)
+
+- `CORS_ALLOWED_ORIGINS` aceita **lista separada por vírgula**; em `dev` o default é `http://localhost:3000`
+  e em `prod` a variável é **obrigatória**.
+- `allowCredentials: true` está habilitado → **não use `*`** como origem (o navegador rejeita
+  `Access-Control-Allow-Origin: *` em requisições com credenciais).
+- ✅ **Caminho recomendado (e suportado):** o frontend (repositório separado) expõe `/api` no próprio host e faz
+  **proxy same-origin** para `http://localhost:8080` (ex.: `rewrites` no `next.config.ts`). Sem cross-origin,
+  o cookie `HttpOnly` viaja normalmente e o *preflight* deixa de ser problema.
+- ⚠️ **Chamada cross-origin direta** (`localhost:3000` → `localhost:8080`): funciona em
+  `login`/`refresh`/`logout` (rotas públicas), mas **falha nas rotas autenticadas** — o
+  `JwtAuthenticationFilter` responde **401 ao preflight** e o `SecurityConfig` não habilita CORS do Spring
+  Security. Detalhes e alternativa em [`API.md`](API.md) → "CORS e integração com o frontend".
+
 ### Bootstrap do ADMIN
 
 | Variável | Descrição | Exemplo |
@@ -322,3 +336,8 @@ classes (javadocs e mensagens de validação) — padronização futura; **nenhu
   permanece no disco. Decidir se deve ser removida — na nova estrutura o build gera `target/` na raiz.
 - ⚠️ **A VALIDAR:** existe um `package-lock.json` **órfão** na raiz (sem `package.json` correspondente,
   resquício do scaffold do frontend). Decidir se deve ser removido deste repositório backend-only.
+- ⚠️ **A VALIDAR (CORS em chamadas cross-origin):** habilitar CORS no Spring Security
+  (`.cors(Customizer.withDefaults())` em `SecurityConfig`) para permitir chamadas **cross-origin** às rotas
+  autenticadas — hoje apenas `login`/`refresh`/`logout` funcionam cross-origin (ver [`API.md`](API.md) →
+  "CORS e integração com o frontend"). Alternativa **sem** alterar código: proxy same-origin no frontend
+  (**caminho já suportado**). Nesta parte **nada foi alterado** em `SecurityConfig`.

@@ -37,6 +37,61 @@ Fluxo implementado (`AuthController` + `AuthenticationService` + `JwtTokenProvid
   ADMIN. Sem casos de uso próprios implementados.
 - **FISIOTERAPEUTA** — mesmo comportamento de `ATENDENTE` (validado em `AuthenticationFlowIT`).
 
+## CORS e integração com o frontend (repositório separado)
+
+### Configuração verificada no código
+
+Fonte: `WebConfig` (`WebMvcConfigurer.addCorsMappings`) + `CorsProperties` (`@ConfigurationProperties("app.cors")`).
+**Não existe `@CrossOrigin` em nenhum controller e nenhuma origem está *hardcoded*.**
+
+| Item | Valor | Origem |
+|------|-------|--------|
+| Origens | `CORS_ALLOWED_ORIGINS` (lista separada por vírgula) | env → `app.cors.allowed-origins` |
+| Default em `dev` | `http://localhost:3000` | `application-dev.yml` |
+| Em `prod` | **obrigatória** (sem default) | `application-prod.yml` |
+| Paths | `/api/**` | `registry.addMapping("/api/**")` |
+| Métodos | `GET, POST, PUT, PATCH, DELETE, OPTIONS` | `allowedMethods(...)` |
+| Headers | `*` (inclui `Authorization` e `Content-Type`) | `allowedHeaders("*")` |
+| Credenciais | `allowCredentials(true)` | necessário para a cookie `refresh_token` |
+| Cache do preflight | `maxAge(3600)` (1 hora) | `registry...maxAge(3600)` |
+
+> ⚠️ **Não use `*` em `CORS_ALLOWED_ORIGINS`:** com `allowCredentials: true` o navegador **rejeita**
+> `Access-Control-Allow-Origin: *` em requisições com credenciais. Liste as origens exatas.
+
+### ✅ Caminho recomendado: proxy same-origin (dispensa CORS)
+
+O javadoc do próprio `WebConfig` documenta o desenho pretendido: **em desenvolvimento o frontend expõe `/api`
+no próprio host e faz proxy para `http://localhost:8080`** (ex.: `rewrites` no `next.config.ts`). Nesse modo:
+
+- não há requisição cross-origin → **CORS e preflight deixam de ser problema**;
+- a cookie `refresh_token` (`HttpOnly`, `Path=/api`) viaja como **same-origin**, sem depender de `SameSite`.
+
+### ⚠️ Análise estática: chamada cross-origin direta (`localhost:3000` → `localhost:8080`)
+
+Conclusão obtida **lendo o código** (não executada: nesta máquina não há PostgreSQL/Docker, então o app não sobe):
+
+- `SecurityConfig` **não habilita CORS no Spring Security** (não há `.cors(...)`), e o
+  `JwtAuthenticationFilter` executa **antes** do tratamento de CORS do Spring MVC.
+- O filtro ignora apenas `PUBLIC_PATHS` = `/api/auth/login`, `/api/auth/refresh`, `/api/auth/logout`.
+  Em qualquer outra rota, requisição sem `Authorization` → **401**.
+- O **preflight** (`OPTIONS`, e o navegador **nunca** envia credenciais no preflight) das rotas
+  `/api/auth/me`, `/api/users` e `/api/users/{id}/status` cai no filtro → **401 sem headers de CORS** →
+  o navegador bloqueia a requisição real.
+- Logo: cross-origin direto **funciona** em `login`/`refresh`/`logout` (rotas públicas, cujo preflight o CORS
+  do MVC responde) e **falha** nas rotas autenticadas.
+
+**Alternativa (exige alteração de código, NÃO feita nesta parte):** habilitar CORS no Spring Security com
+`.cors(Customizer.withDefaults())` em `SecurityConfig` — decisão pendente (ver `README.md` → "Pontos A VALIDAR").
+
+### Observação sobre a cookie em cenário cross-origin
+
+`SameSite=Lax` bloqueia cookies em requisições **cross-site**, não cross-origin: `localhost:3000` →
+`localhost:8080` contam como **mesmo site** (`localhost`), então a cookie tende a ser enviada normalmente.
+Cenários com hosts diferentes (ex.: frontend em `192.168.x.x` e API em `localhost`) seriam **cross-site** e a
+cookie **não** seguiria, exigindo `SameSite=None` + `Secure=true` + HTTPS. Como `app.cookie.same-site` está
+**fixo em `lax`** no `application.yml` (sem variável de ambiente), esse cenário exigiria mudança de
+configuração/código — **decisão pendente do time**.
+
 ## Endpoints
 
 ### POST /api/auth/login
@@ -215,11 +270,9 @@ Existem **dois formatos** de erro — inconsistência conhecida do código atual
 
 - **Nota:** o endpoint canônico é `/api/auth/me`. O frontend deve consumir este caminho.
 - **Nota:** este documento cobre **apenas o backend**; o frontend está em repositório separado.
-- **CORS:** `WebConfig` libera `/api/**` para as origens de `CORS_ALLOWED_ORIGINS`, com
-  `allowCredentials: true`, métodos `GET, POST, PUT, PATCH, DELETE, OPTIONS` e qualquer header
-  (`allowedHeaders("*")`). Como o cookie é `SameSite=Lax`, chamadas cross-origin diretas (ex.: `localhost:3000`
-  → `localhost:8080`) exigem atenção; o próprio `WebConfig` documenta que, em desenvolvimento, o frontend
-  (repositório separado) usa **proxy** de `/api`.
+- **CORS:** a configuração verificada, a análise de *preflight* em chamadas cross-origin e a recomendação de
+  **proxy same-origin** estão na seção
+  ["CORS e integração com o frontend"](#cors-e-integração-com-o-frontend-repositório-separado).
 - **Datas:** `createdAt` é um `Instant` serializado em ISO-8601 UTC (`2026-01-01T12:00:00Z`). O Jackson está
   configurado com `time-zone: America/Sao_Paulo` e `locale: pt-BR`.
 - **Mensagens:** todas as mensagens de erro/sucesso de validação estão em **espanhol** (idioma do código).
