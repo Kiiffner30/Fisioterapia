@@ -87,6 +87,26 @@ FisioVida/                        (raiz do repositorio)
 - **Maven Wrapper** — já incluído no repositório (`mvnw` / `mvnw.cmd`); não é necessário instalar Maven
 - Portas livres: **5432** (PostgreSQL) e **8080** (backend)
 
+## JDK 21 (desenvolvimento local)
+
+Este projeto requer **Java 21**. Se o seu ambiente tem apenas um Java anterior (ex.: Java 8) ou um JDK com
+versão superior, **não é necessário mexer no Java global da máquina**: baixe uma versão portátil (por
+exemplo, [Eclipse Temurin 21](https://adoptium.net/temurin/releases/?version=21), `.zip` para Windows x64),
+extraia em `.jdk/jdk-21/` e use apenas nesta sessão de terminal. A pasta `/.jdk/` já está no `.gitignore`.
+
+```powershell
+$env:JAVA_HOME = "$PWD\.jdk\jdk-21"
+$env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
+java -version    # deve exibir 21.x
+```
+
+Com o `JAVA_HOME` ajustado, os comandos da raiz funcionam normalmente
+(`.\mvnw.cmd clean package -DskipTests`, `.\mvnw.cmd test`, `.\mvnw.cmd spring-boot:run`).
+
+> ℹ️ O `pom.xml` fixa `<release>21</release>`; se você compilar com um JDK mais novo (ex.: 25), o
+> `maven-compiler-plugin` gerará bytecode 21 — mas esteja ciente de que o Spring Boot 3.5.3 **não** é
+> homologado para JDKs acima de 24. Prefira o JDK 21.
+
 ## Como subir o PostgreSQL
 
 O `docker-compose.yml` fica na **raiz do repositório**:

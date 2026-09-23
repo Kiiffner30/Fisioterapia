@@ -20,6 +20,8 @@ frontend/.env.local
 
 # ---- Herramientas locales (JDK, Maven, etc.) ----
 .tools/
+# JDK 21 portatil para desarrollo local (ver README.md -> "JDK 21 (desenvolvimento local)")
+/.jdk/
 
 # ---- IDE / SO ----
 .idea/
