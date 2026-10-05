@@ -344,7 +344,7 @@ formatos de erro" foi **resolvido** — o mesmo corpo é usado nos dois caminhos
   "message": "El usuario está inactivo", "path": "/api/auth/login" }
 ```
 
-**403 — sem permissão** (role diferente de ADMIN; resposta do `accessDeniedHandler`):
+**403 — sem permissão** (role diferente de ADMIN; `ApiError` para negação em `@PreAuthorize` e na filter chain):
 
 ```json
 { "timestamp": "2026-01-01T12:00:00Z", "status": 403, "error": "Acceso denegado",
@@ -383,7 +383,7 @@ formatos de erro" foi **resolvido** — o mesmo corpo é usado nos dois caminhos
 | `401` | `Autenticación fallida` | `Credenciales inválidas` | e-mail inexistente ou senha incorreta |
 | `401` | `Sesión expirada` | `Sesión inválida o expirada` | refresh ausente, desconhecido, revogado ou expirado |
 | `401` | `Usuario inactivo` | `El usuario está inactivo` | usuário existente com `active = false` |
-| `403` | `Acceso denegado` | `Acceso denegado` | role sem permissão (`@PreAuthorize`) |
+| `403` | `Acceso denegado` | `Acceso denegado` | role sem permissão (`@PreAuthorize`); `GlobalExceptionHandler` trata negação em métodos e `accessDeniedHandler` trata negação na filter chain |
 | `404` | `Recurso no encontrado` | `Usuario no encontrado` ou `La ruta no existe` | id inexistente / rota desconhecida |
 | `409` | `Conflicto` | `Ya existe un usuario con ese email` | e-mail duplicado |
 | `500` | `Error interno` | `Ocurrió un error inesperado` | exceção não tratada |
@@ -392,8 +392,8 @@ formatos de erro" foi **resolvido** — o mesmo corpo é usado nos dois caminhos
 > **defesa em profundidade**: o DTO (`CreateUserRequest`) já rejeita senhas com menos de 8 caracteres antes de o
 > caso de uso ser executado — na prática o frontend não a verá via HTTP.
 
-> ℹ️ O **403 não tem corpo alternativo**: apenas o `accessDeniedHandler` responde (a duplicidade de tratamento foi
-> removida do `GlobalExceptionHandler`).
+> ℹ️ O **403 não tem corpo alternativo**: negações de `@PreAuthorize` são tratadas pelo `GlobalExceptionHandler`; negações
+> na filter chain são tratadas pelo `accessDeniedHandler`. Ambos retornam o mesmo `ApiError`.
 
 ## 7. Fluxo completo de login (passo a passo real)
 

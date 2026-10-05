@@ -4,6 +4,8 @@ import com.clinica.fisioterapia.domain.audit.AuditAction;
 import com.clinica.fisioterapia.domain.audit.AuditLogRepository;
 import com.clinica.fisioterapia.domain.audit.AuditLog;
 import com.clinica.fisioterapia.domain.common.Clock;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 import java.util.UUID;
@@ -25,5 +27,11 @@ public class AuditService {
     public void record(UUID userId, AuditAction action, String entity, String entityId,
                        Map<String, Object> payloadBefore, Map<String, Object> payloadAfter) {
         auditLogs.save(AuditLog.of(userId, action, entity, entityId, payloadBefore, payloadAfter, clock.now()));
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void recordInNewTransaction(UUID userId, AuditAction action, String entity, String entityId,
+                                       Map<String, Object> payloadBefore, Map<String, Object> payloadAfter) {
+        record(userId, action, entity, entityId, payloadBefore, payloadAfter);
     }
 }

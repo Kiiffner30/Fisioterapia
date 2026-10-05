@@ -67,13 +67,17 @@ public class AuthenticationService {
 
     @Transactional
     public LoginResult login(String email, String password) {
-        User user = users.findByEmail(Email.of(email))
-                .orElseThrow(InvalidCredentialsException::new);
+        User user = users.findByEmail(Email.of(email)).orElse(null);
+        if (user == null) {
+            audit.recordInNewTransaction(null, AuditAction.LOGIN_FAILED, "USER", null,
+                    Map.of("email", Email.of(email).value()), Map.of());
+            throw new InvalidCredentialsException();
+        }
         if (!user.isActive()) {
             throw new InactiveUserException();
         }
         if (!passwordEncoder.matches(password, user.getPasswordHash().value())) {
-            audit.record(null, AuditAction.LOGIN_FAILED, "USER", null,
+            audit.recordInNewTransaction(null, AuditAction.LOGIN_FAILED, "USER", null,
                     Map.of("email", user.getEmail().value()), Map.of());
             throw new InvalidCredentialsException();
         }

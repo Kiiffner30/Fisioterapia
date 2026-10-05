@@ -133,20 +133,20 @@ class AuthenticationFlowIT {
 
     @Test
     void endpointProtegidoSinTokenDevuelve401() throws Exception {
-        mvc.perform(get("/api/me"))
+        mvc.perform(get("/api/auth/me"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void endpointProtegidoConTokenInvalidoDevuelve401() throws Exception {
-        mvc.perform(get("/api/me").header("Authorization", "Bearer token-invalido-abc"))
+        mvc.perform(get("/api/auth/me").header("Authorization", "Bearer token-invalido-abc"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void meDevuelveElUsuarioAutenticado() throws Exception {
         MvcResult login = loginAdmin();
-        mvc.perform(get("/api/me")
+        mvc.perform(get("/api/auth/me")
                         .header("Authorization", "Bearer " + accessTokenDe(login)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value(ADMIN_EMAIL))

@@ -125,17 +125,16 @@ filtro) usam o `HttpErrorWriter`.
   refresh token. O payload de auditoria contém apenas o `userId` — **sem** senha e **sem** tokens.
 - ✅ **Formato de erro unificado:** o `HttpErrorWriter` passou a serializar o mesmo `ApiError`
   (`timestamp, status, error, message, path`), eliminando o segundo formato de erro.
-- ✅ **Duplicidade no tratamento de 403 removida:** o `@ExceptionHandler(AccessDeniedException)` saiu do
-  `GlobalExceptionHandler`; o 403 é respondido apenas pelo `accessDeniedHandler` do `SecurityConfig`.
+- ✅ **403 de `@PreAuthorize` corrigido:** `AuthorizationDeniedException` é convertido em HTTP 403 pelo
+  `GlobalExceptionHandler`; negações na filter chain continuam no `accessDeniedHandler` do `SecurityConfig`.
 
 ### Observações dessas correções
 
 - **Trade-off de camadas:** `HttpErrorWriter` (infrastructure) agora importa `ApiError` (presentation) para
   garantir **uma única** definição do contrato de erro. Se o time preferir camadas estritamente independentes,
   a alternativa é mover `ApiError` para um pacote compartilhado — **não** feito nesta parte.
-- **Corpo do 403:** como só o `accessDeniedHandler` responde, o JSON passou a ser
-  `error = message = "Acceso denegado"` (antes: `message = "No tiene permisos para esta acción"`). O
-  comportamento HTTP (**403**) não mudou.
+- **Corpo do 403:** ambos os caminhos retornam `ApiError` com
+  `error = message = "Acceso denegado"` (antes, negações de `@PreAuthorize` caíam no handler genérico como HTTP 500).
 - **Logout sem cookie válido:** continua **204** e **não** gera auditoria (não há usuário identificável).
 - **Verificação:** `./mvnw clean package -DskipTests` → **BUILD SUCCESS**. Os testes de integração
   (`AuthenticationFlowIT`) **não** foram executados (exigem PostgreSQL/Docker).

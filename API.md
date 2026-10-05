@@ -203,7 +203,7 @@ comparação **case-insensitive**, com `trim`). O usuário é criado com `active
 - `400` — falha de validação (`campo: mensagem`), body ausente/ilegível ou `role` inexistente
   (`Perfil inválido: X`).
 - `401` — sem token válido.
-- `403` — `Acceso denegado` (role diferente de ADMIN; resposta do `accessDeniedHandler`).
+- `403` — `Acceso denegado` (role diferente de ADMIN; `AuthorizationDeniedException` tratada pelo `GlobalExceptionHandler`).
 - `409` — `Ya existe un usuario con ese email`.
 
 **Auditoria:** grava `USER_CREATED` (payload com e-mail, role e `active`; **sem senha**).
@@ -266,7 +266,7 @@ Exemplo com detalhe de validação (o `message` traz campo e motivo):
 | `401` | `Autenticación fallida` | `Credenciales inválidas` | Credenciais inválidas no login |
 | `401` | `Sesión expirada` | `Sesión inválida o expirada` | Refresh token ausente, desconhecido, revogado ou expirado |
 | `401` | `Usuario inactivo` | `El usuario está inactivo` | Usuário desativado |
-| `403` | `Acceso denegado` | igual ao `error` | Role sem permissão (`@PreAuthorize`) — resposta do `accessDeniedHandler` |
+| `403` | `Acceso denegado` | igual ao `error` | Role sem permissão (`@PreAuthorize`); `GlobalExceptionHandler` trata negação em métodos e `accessDeniedHandler` trata negação na filter chain |
 | `404` | `Recurso no encontrado` | `Usuario no encontrado` ou `La ruta no existe` | Usuário inexistente ou rota desconhecida |
 | `409` | `Conflicto` | `Ya existe un usuario con ese email` | E-mail já cadastrado |
 | `500` | `Error interno` | `Ocurrió un error inesperado` | Exceção não tratada (stack trace **não** é exposto; é logado no servidor) |
